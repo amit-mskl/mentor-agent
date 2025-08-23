@@ -33,6 +33,40 @@ body {
   font-size: 1rem;
 }
 
+.mentor-selector {
+  padding: 1rem 2rem;
+  background: white;
+  border-bottom: 1px solid #e1e5e9;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.mentor-selector label {
+  font-weight: 600;
+  color: #333;
+}
+
+.mentor-dropdown {
+  padding: 0.5rem 1rem;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.mentor-dropdown:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.mentor-dropdown:hover {
+  border-color: #667eea;
+}
+
 .chat-container {
   flex: 1;
   display: flex;

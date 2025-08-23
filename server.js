@@ -24,27 +24,41 @@ app.get('/', (req, res) => {
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, mentor = 'sarah' } = req.body;
     
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    console.log('Attempting API call with message:', message);
+    // Define mentor prompts
+    const mentorPrompts = {
+      'sarah': 'You are Sarah Chen, an experienced Excel mentor with 10+ years of business analysis experience. You specialize in Excel formulas, pivot tables, data visualization, and business reporting. Provide practical, step-by-step guidance with real-world examples.',
+      'marcus': 'You are Marcus Rodriguez, a senior data engineer with 8+ years of database experience. You specialize in SQL query optimization, database design, and performance tuning. Focus on best practices, efficient queries, and scalable solutions. Explain concepts clearly and always consider performance implications.'
+    };
+
+    const mentorNames = {
+      'sarah': 'Sarah Chen',
+      'marcus': 'Marcus Rodriguez'
+    };
+
+    const selectedPrompt = mentorPrompts[mentor] || mentorPrompts['sarah'];
+    const selectedName = mentorNames[mentor] || mentorNames['sarah'];
+
+    console.log(`Attempting API call with ${selectedName} for message:`, message);
     
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       messages: [{
         role: 'user',
-        content: message
+        content: `${selectedPrompt}\n\nUser question: ${message}`
       }]
     });
 
     console.log('API response received:', response);
 
     res.json({ 
-      mentor: 'Sarah Chen',
+      mentor: selectedName,
       response: response.content[0].text 
     });
   } catch (error) {
