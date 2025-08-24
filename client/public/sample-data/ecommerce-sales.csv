@@ -1,0 +1,21 @@
+order_id,customer_id,customer_name,customer_email,product_name,category,order_date,quantity,unit_price,discount,shipping_cost,customer_age,customer_city,customer_state
+ORD001,CUST001,John Smith,john.smith@email.com,Wireless Headphones,Electronics,2024-01-15,1,89.99,10,5.99,28,New York,NY
+ORD002,CUST002,Sarah Johnson,,Yoga Mat,Sports & Fitness,2024-01-16,2,24.99,0,0,34,Los Angeles,CA
+ORD003,CUST003,Mike Chen,mike.chen@gmail.com,Coffee Maker,Home & Kitchen,2024-01-16,1,129.99,15,7.99,42,Chicago,IL
+ORD004,CUST001,John Smith,john.smith@email.com,Phone Case,Electronics,2024-01-18,3,12.99,5,3.99,28,New York,NY
+ORD005,CUST004,Emily Davis,emily.d@yahoo.com,Running Shoes,Sports & Fitness,2024-01-19,1,79.99,0,5.99,26,Miami,FL
+ORD006,CUST005,David Wilson,,Laptop Stand,Electronics,2024-01-20,1,45.99,10,4.99,,Seattle,WA
+ORD007,CUST002,Sarah Johnson,,Protein Powder,Sports & Fitness,2024-01-22,2,39.99,20,0,34,Los Angeles,CA
+ORD008,CUST006,Lisa Brown,lisa.brown@hotmail.com,Kitchen Scale,Home & Kitchen,2024-01-23,1,29.99,0,3.99,31,Denver,CO
+ORD009,CUST007,Tom Anderson,tom.a@gmail.com,Bluetooth Speaker,Electronics,2024-01-24,1,54.99,8,4.99,38,Boston,MA
+ORD010,CUST003,Mike Chen,mike.chen@gmail.com,Tea Set,Home & Kitchen,2024-01-25,1,34.99,5,5.99,42,Chicago,IL
+ORD011,CUST008,Jennifer Lee,,Gaming Mouse,Electronics,2024-01-26,2,32.99,0,2.99,24,Portland,OR
+ORD012,CUST004,Emily Davis,emily.d@yahoo.com,Yoga Blocks,Sports & Fitness,2024-01-28,4,8.99,0,4.99,26,Miami,FL
+ORD013,CUST009,Robert Taylor,robert.t@email.com,Air Fryer,Home & Kitchen,2024-01-29,1,89.99,25,6.99,45,Phoenix,AZ
+ORD014,CUST010,Amanda White,amanda.w@gmail.com,Fitness Tracker,Electronics,2024-01-30,1,149.99,30,5.99,29,San Diego,CA
+ORD015,CUST005,David Wilson,,Desk Organizer,Home & Kitchen,2024-02-01,3,15.99,0,3.99,,Seattle,WA
+ORD016,CUST011,Chris Garcia,chris.g@yahoo.com,Resistance Bands,Sports & Fitness,2024-02-02,1,19.99,0,2.99,33,Austin,TX
+ORD017,CUST001,John Smith,john.smith@email.com,Tablet Case,Electronics,2024-02-03,1,22.99,0,3.99,28,New York,NY
+ORD018,CUST012,Maria Rodriguez,maria.r@gmail.com,Blender,Home & Kitchen,2024-02-04,1,69.99,15,6.99,36,Houston,TX
+ORD019,CUST013,Kevin Johnson,kevin.j@email.com,Wireless Charger,Electronics,2024-02-05,2,25.99,5,3.99,31,Philadelphia,PA
+ORD020,CUST007,Tom Anderson,tom.a@gmail.com,Water Bottle,Sports & Fitness,2024-02-06,3,16.99,0,4.99,38,Boston,MA
