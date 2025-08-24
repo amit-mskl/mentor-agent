@@ -32,12 +32,12 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   fileFilter: (req, file, cb) => {
-    const allowedTypes = ['.xlsx', '.xls', '.csv'];
+    const allowedTypes = ['.xlsx', '.xls', '.csv', '.md'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowedTypes.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error('Only Excel files (.xlsx, .xls) and CSV files are allowed'), false);
+      cb(new Error('Only Excel files (.xlsx, .xls), CSV files, and Markdown files (.md) are allowed'), false);
     }
   },
   limits: {
@@ -250,6 +250,57 @@ Since I cannot directly read Excel files in this environment, I'll provide feedb
     res.status(500).json({ 
       success: false, 
       error: 'Failed to review work', 
+      details: error.message 
+    });
+  }
+});
+
+// Curriculum upload endpoint
+app.post('/api/upload-curriculum', upload.single('curriculum'), async (req, res) => {
+  try {
+    const { mentor } = req.body;
+    const uploadedFile = req.file;
+
+    if (!uploadedFile) {
+      return res.status(400).json({ success: false, error: 'No curriculum file uploaded' });
+    }
+
+    console.log(`Uploading curriculum for ${mentor}`);
+    console.log('File:', uploadedFile.filename);
+
+    // Read the markdown content
+    const curriculumContent = fs.readFileSync(uploadedFile.path, 'utf8');
+    
+    // Extract title from markdown (first # heading)
+    const titleMatch = curriculumContent.match(/^# (.+)$/m);
+    const title = titleMatch ? titleMatch[1] : uploadedFile.originalname;
+
+    // Clean up uploaded file
+    fs.unlinkSync(uploadedFile.path);
+
+    // For now, we'll just return the content. In a real app, you'd store this in a database
+    res.json({
+      success: true,
+      title: title,
+      content: curriculumContent,
+      mentor: mentor
+    });
+
+  } catch (error) {
+    console.error('Curriculum upload error:', error);
+    
+    // Clean up file if it exists
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (cleanupError) {
+        console.error('File cleanup error:', cleanupError);
+      }
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to upload curriculum', 
       details: error.message 
     });
   }

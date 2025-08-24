@@ -4,7 +4,7 @@ import './App.css';
 
 function App() {
   const [currentMentor, setCurrentMentor] = useState('sarah');
-  const [mode, setMode] = useState('chat'); // 'chat' or 'challenge'
+  // Removed mode switching - everything is now chat-driven
   const [messages, setMessages] = useState([
     { 
       role: 'assistant', 
@@ -19,6 +19,10 @@ function App() {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [reviewInProgress, setReviewInProgress] = useState(false);
+  const [showCurriculumUpload, setShowCurriculumUpload] = useState(false);
+  const [curriculumUploaded, setCurriculumUploaded] = useState(false);
+  const [curriculumContent, setCurriculumContent] = useState('');
+  const [showChatInput, setShowChatInput] = useState(false);
 
   const mentors = {
     'sarah': { name: 'Sarah Chen', expertise: 'Excel', welcome: 'Hi! I\'m Sarah Chen, your Excel mentor with 10+ years of business analysis experience. What Excel challenge can I help you with today?' },
@@ -59,12 +63,10 @@ function App() {
       console.log('Sending request to backend...');
       
       let contextualMessage = input;
-      if (challengeStarted && mode === 'challenge') {
-        contextualMessage = `[CHALLENGE CONTEXT: Excel E-commerce Analysis - Phase ${currentPhase}/3 - ${
-          currentPhase === 1 ? 'Data Cleaning' : 
-          currentPhase === 2 ? 'Analysis & Insights' : 
-          'Visualization & Presentation'
-        }] ${input}`;
+      
+      // Add curriculum context if available
+      if (curriculumContent) {
+        contextualMessage = `[CURRICULUM CONTEXT: ${curriculumContent.substring(0, 1000)}...] ${input}`;
       }
       
       const response = await fetch('/api/chat', {
@@ -95,6 +97,42 @@ function App() {
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       sendMessage();
+    }
+  };
+
+  const handleCurriculumUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file || !file.name.endsWith('.md')) {
+      alert('Please select a .md (markdown) file');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('curriculum', file);
+    formData.append('mentor', currentMentor);
+
+    try {
+      const response = await fetch('/api/upload-curriculum', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setCurriculumContent(data.content);
+        setCurriculumUploaded(true);
+        setShowCurriculumUpload(false);
+        setMessages([{
+          role: 'assistant',
+          content: `Perfect! I've loaded your curriculum "${data.title}". I'm now ready to provide guided learning experiences based on this content. How would you like to start learning?`
+        }]);
+      } else {
+        alert('Failed to upload curriculum: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Curriculum upload error:', error);
+      alert('Failed to upload curriculum. Please try again.');
     }
   };
 
@@ -188,7 +226,49 @@ function App() {
       <header className="chat-header">
         <h1>📊 DataMentor AI</h1>
         <p>Chat with {mentors[currentMentor].name} - {mentors[currentMentor].expertise} Expert</p>
+        {!curriculumUploaded && (
+          <div className="curriculum-setup-prompt">
+            <button 
+              onClick={() => setShowCurriculumUpload(true)}
+              className="setup-curriculum-button"
+            >
+              🎓 Setup Learning Experience
+            </button>
+          </div>
+        )}
       </header>
+      
+      {showCurriculumUpload && (
+        <div className="curriculum-upload-modal">
+          <div className="curriculum-upload-container">
+            <h2>Set up a new Learning Experience with {mentors[currentMentor].name}</h2>
+            <div className="upload-section">
+              <h3>Upload learning content as .md files</h3>
+              <p>Upload your structured markdown curriculum file to give {mentors[currentMentor].name} the context needed for guided learning.</p>
+              
+              <div className="file-upload-area">
+                <input
+                  type="file"
+                  accept=".md"
+                  onChange={handleCurriculumUpload}
+                  className="curriculum-file-input"
+                  id="curriculum-upload"
+                />
+                <label htmlFor="curriculum-upload" className="curriculum-upload-button">
+                  📁 Choose .md file to upload
+                </label>
+              </div>
+              
+              <button 
+                onClick={() => setShowCurriculumUpload(false)}
+                className="cancel-upload-button"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="mentor-selector">
         <label htmlFor="mentor-select">Choose your mentor:</label>
@@ -203,23 +283,8 @@ function App() {
         </select>
       </div>
       
-      <div className="mode-tabs">
-        <button 
-          className={`mode-tab ${mode === 'chat' ? 'active' : ''}`}
-          onClick={() => setMode('chat')}
-        >
-          💬 Chat Mode
-        </button>
-        <button 
-          className={`mode-tab ${mode === 'challenge' ? 'active' : ''}`}
-          onClick={() => setMode('challenge')}
-        >
-          🎯 Challenge Mode
-        </button>
-      </div>
-      
-      {mode === 'chat' ? (
-        <div className="chat-container">
+      {/* Unified chat experience */}
+      <div className="chat-container">
         <div className="messages">
           {messages.map((message, index) => {
             // Detect if this is a detailed review (contains multiple sections/headers)
@@ -228,15 +293,46 @@ function App() {
                message.content.length > 500);
             
             return (
-              <div key={index} className={`message ${message.role}`}>
-                <div className={`message-content ${isDetailedReview ? 'wide-review' : ''}`}>
-                  {message.role === 'assistant' ? (
-                    <ReactMarkdown>{message.content}</ReactMarkdown>
-                  ) : (
-                    message.content
-                  )}
+              <>
+                <div key={index} className={`message ${message.role}`}>
+                  <div className={`message-content ${isDetailedReview ? 'wide-review' : ''}`}>
+                    {message.role === 'assistant' ? (
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                    ) : (
+                      message.content
+                    )}
+                  </div>
                 </div>
-              </div>
+                {/* Show guided learning buttons after Sarah's welcome message when curriculum is loaded */}
+                {message.role === 'assistant' && index === messages.length - 1 && curriculumUploaded && (
+                  <div className="guided-learning-buttons">
+                    <button 
+                      className="learning-option-button"
+                      onClick={() => setShowChatInput(false)}
+                    >
+                      Learn Something New
+                    </button>
+                    <button 
+                      className="learning-option-button"
+                      onClick={() => setShowChatInput(false)}
+                    >
+                      Practice a new Scenarios
+                    </button>
+                    <button 
+                      className="learning-option-button"
+                      onClick={() => setShowChatInput(false)}
+                    >
+                      Take a Challenge
+                    </button>
+                    <button 
+                      className="learning-option-button"
+                      onClick={() => setShowChatInput(true)}
+                    >
+                      Anything else
+                    </button>
+                  </div>
+                )}
+              </>
             );
           })}
           {loading && (
@@ -248,195 +344,23 @@ function App() {
           )}
         </div>
         
-        <div className="input-container">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask Sarah about Excel formulas, pivot tables, data analysis..."
-            className="message-input"
-          />
-          <button onClick={sendMessage} disabled={loading} className="send-button">
-            Send
-          </button>
-        </div>
+        {/* Only show chat input when curriculum is not uploaded OR when "Anything else" is clicked */}
+        {(!curriculumUploaded || showChatInput) && (
+          <div className="input-container">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder=""
+              className="message-input"
+            />
+            <button onClick={sendMessage} disabled={loading} className="send-button">
+              Send
+            </button>
+          </div>
+        )}
       </div>
-      ) : (
-        <div className="challenge-container">
-          {!challengeStarted ? (
-            <>
-              <div className="challenge-header">
-                <h2>🎯 Excel Challenge: E-commerce Sales Analysis</h2>
-                <p>Work with Sarah Chen to analyze real business data and uncover insights!</p>
-              </div>
-              
-              <div className="challenge-content">
-                <div className="challenge-info">
-                  <h3>📋 Your Mission</h3>
-                  <p>You're a data analyst at RetailCorp. Sarah needs insights from our sales data to help the marketing team make better decisions.</p>
-                  
-                  <div className="challenge-phases">
-                    <div className="phase">
-                      <span className="phase-number">1</span>
-                      <div className="phase-info">
-                        <h4>🧹 Data Cleaning (15 min)</h4>
-                        <p>Handle missing values, remove duplicates, standardize formats</p>
-                      </div>
-                    </div>
-                    <div className="phase">
-                      <span className="phase-number">2</span>
-                      <div className="phase-info">
-                        <h4>📊 Analysis & Insights (20 min)</h4>
-                        <p>Create pivot tables, calculate key metrics, find trends</p>
-                      </div>
-                    </div>
-                    <div className="phase">
-                      <span className="phase-number">3</span>
-                      <div className="phase-info">
-                        <h4>📈 Visualization (10 min)</h4>
-                        <p>Build charts, create dashboard, present findings</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="challenge-actions">
-                    <a 
-                      href="/sample-data/ecommerce-sales.csv" 
-                      download
-                      className="download-button"
-                    >
-                      📥 Download Sample Data
-                    </a>
-                    <button onClick={startChallenge} className="start-challenge-button">
-                      🚀 Start Challenge
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="challenge-header">
-                <h2>🎯 Excel Challenge: Phase {currentPhase}/3</h2>
-                <p>Working with Sarah Chen - {
-                  currentPhase === 1 ? '🧹 Data Cleaning' : 
-                  currentPhase === 2 ? '📊 Analysis & Insights' : 
-                  '📈 Visualization'
-                }</p>
-              </div>
-              
-              <div className="challenge-progress">
-                <div className="progress-bar">
-                  <div 
-                    className="progress-fill" 
-                    style={{ width: `${(Object.values(phaseCompleted).filter(Boolean).length / 3) * 100}%` }}
-                  ></div>
-                </div>
-                <div className="phase-indicators">
-                  {[1, 2, 3].map(phase => (
-                    <div 
-                      key={phase}
-                      className={`phase-indicator ${
-                        phaseCompleted[phase] ? 'completed' : 
-                        phase === currentPhase ? 'active' : 'pending'
-                      }`}
-                    >
-                      {phaseCompleted[phase] ? '✅' : phase}
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="chat-container">
-                <div className="messages">
-                  {messages.map((message, index) => {
-                    // Detect if this is a detailed review (contains multiple sections/headers)
-                    const isDetailedReview = message.role === 'assistant' && 
-                      (message.content.includes('###') || message.content.includes('##') || 
-                       message.content.length > 500);
-                    
-                    return (
-                      <div key={index} className={`message ${message.role}`}>
-                        <div className={`message-content ${isDetailedReview ? 'wide-review' : ''}`}>
-                          {message.role === 'assistant' ? (
-                            <ReactMarkdown>{message.content}</ReactMarkdown>
-                          ) : (
-                            message.content
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {loading && (
-                    <div className="message assistant">
-                      <div className="message-content">
-                        Sarah is thinking...
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="challenge-controls">
-                  {currentPhase <= 3 && !phaseCompleted[currentPhase] && (
-                    <div className="file-submission">
-                      <div className="submission-header">
-                        <h4>📤 Submit Your Work for Review</h4>
-                        <p>Upload your Excel file for Phase {currentPhase} - Sarah will review and provide feedback</p>
-                      </div>
-                      
-                      <div className="file-upload-section">
-                        <input
-                          type="file"
-                          accept=".xlsx,.xls,.csv"
-                          onChange={handleFileSelect}
-                          className="file-input"
-                          id="work-file"
-                        />
-                        <label htmlFor="work-file" className="file-select-button">
-                          📁 {uploadedFile ? uploadedFile.name : 'Choose Excel File'}
-                        </label>
-                      </div>
-                      
-                      <button 
-                        onClick={submitWork}
-                        disabled={!uploadedFile || submitting}
-                        className="submit-work-button"
-                      >
-                        {submitting ? '⏳ Submitting...' : '📤 Submit for Review'}
-                      </button>
-                      
-                      {reviewInProgress && (
-                        <div className="review-status">
-                          <p>🔍 Sarah is reviewing your work...</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="input-container">
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder={`Ask Sarah about ${
-                      currentPhase === 1 ? 'data cleaning techniques...' : 
-                      currentPhase === 2 ? 'Excel analysis and pivot tables...' : 
-                      'data visualization and charts...'
-                    }`}
-                    className="message-input"
-                  />
-                  <button onClick={sendMessage} disabled={loading} className="send-button">
-                    Send
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }
